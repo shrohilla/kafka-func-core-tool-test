@@ -8,7 +8,7 @@ class IntiateApp:
     def initiate(json_file_path):
         logging.basicConfig(
             format='%(asctime)s\t%(levelname)s\t%(message)s',
-            level=logging.DEBUG,
+            level=logging.INFO,
             datefmt='%Y-%m-%dT%H:%M:%S')
         config = None
         with open(json_file_path, 'r') as f:

@@ -9,3 +9,4 @@ class AzCliCommandExecutor(Executor):
 
     def execute(self):
         return self.az_cli_command.execute_command()
+    

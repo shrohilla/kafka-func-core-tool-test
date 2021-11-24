@@ -11,21 +11,22 @@ class AzCliCommand(Command):
     def __init__(self, object: AzCli):
         if type(object) != AzCli:
             raise TypeError("not azcli object type")
-        self.az_cli = object
+        self._az_cli = object
 
     def execute_command(self, *args):
         return self._az_cli_command_execute()
 
     def _az_cli_command_execute(self):
         try:
-            result = self._execute_process(self.az_cli)
-            logging.debug(result)
-            result = json.loads(result.strip())
+            result = self._execute_process(self._az_cli)
+            logging.info(result)
+            if result is not None and result != '':
+                result = json.loads(result.strip())
         except Exception as e:
             logging.error(e)
             raise e
         return result
 
     def _execute_process(self, az_cli):
-        process_executor: Executor = ProcessExecutor(self.az_cli.build_az_cli())
+        process_executor: Executor = ProcessExecutor(self._az_cli.build_az_cli())
         return process_executor.execute()

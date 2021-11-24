@@ -4,6 +4,7 @@ import time
 from typing import List
 
 from azure.eventhub import EventHubProducerClient, EventData, EventHubConsumerClient
+from requests import Response
 
 from pkg._exception import ValidationFailedException, EventHubDataNotProcessedException, TestFailedException
 from pkg.command._http_cmd import HttpCommand
@@ -76,9 +77,10 @@ class EventHubTestProcessor(Processor):
         http_req = HttpRequest(url=func_url, method='get', body={}, params=params)
         http_cmd: HttpCommand = HttpCommand(http_req)
         http_cmd_executor: Executor = HttpCommandExecutor(http_cmd)
-        res = http_cmd_executor.execute()
-        if res is None or res == '':
-            raise TestFailedException('Eventhub output binding test failed')
+        res: Response = http_cmd_executor.execute()
+        if res is None or res.status_code != 200:
+            raise TestFailedException('Eventhub output binding test failed, status_code :: {} and reason :: {}'
+                                      .format(str(res.status_code), res.reason))
 
     def _on_event(self, partition_context, event):
         print("Received event from partition: {}.".format(partition_context.partition_id))

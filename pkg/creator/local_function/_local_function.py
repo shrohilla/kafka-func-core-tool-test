@@ -39,12 +39,14 @@ class LocalFunctionAppCreator(Creator):
         lang_name = self._lang.name.lower()
         logging.info("building the trigger for language :: "+lang_name)
         app_trigger_cmd = self._func_app_trigger
+        #TODO
         if Language.POWERSHELL == self._lang:
             app_trigger_cmd = app_trigger_cmd+" --language "+lang_name
         shell_cmd: Command = ShellCommand(app_trigger_cmd)
         shell_cmd.execute_command()
         logging.info("trigger built successfully")
         app_trigger_cmd = self._func_app_out_binding
+        #TODO
         if Language.POWERSHELL == self._lang:
             app_trigger_cmd = app_trigger_cmd+" --language "+lang_name
         shell_cmd: Command = ShellCommand(app_trigger_cmd)
