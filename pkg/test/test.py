@@ -14,12 +14,12 @@ import threading
 import time
 from typing import List
 
-from azure.eventhub import EventHubConsumerClient
+from azure.eventhub import EventHubConsumerClient, EventHubProducerClient, EventData
 
 from pkg.constant import Constant
 
-CONNECTION_STR = Constant.EVENTHUB_CONNECTION_STRING
-EVENTHUB_NAME = Constant.EVENTHUB_NAME
+CONNECTION_STR = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
+EVENTHUB_NAME = Constant.EVENTHUB_OUTPUT_NAME
 
 
 def on_event(partition_context, event):
@@ -57,8 +57,19 @@ def closing_consumer_client(consumer_client):
     consumer_client.close()
     print("client closed")
 
+def create_producer_send_message():
+    producer = EventHubProducerClient.from_connection_string(
+            conn_str=CONNECTION_STR,
+            eventhub_name=EVENTHUB_NAME
+        )
+    event_data_batch = producer.create_batch()
+    event_data_batch.add(EventData('Har Har Mahadev'))
+    res = producer.send_batch(event_data_batch)
+    producer.close()
+
 
 if __name__ == '__main__':
+    #create_producer_send_message()
     consumer_client = EventHubConsumerClient.from_connection_string(
         conn_str=CONNECTION_STR,
         consumer_group='$Default',
@@ -69,7 +80,7 @@ if __name__ == '__main__':
     # for partition_id in partition_ids:
     #     partition_details = consumer_client.get_partition_properties(partition_id)
     #     print(partition_details)
-    timer = threading.Timer(10, closing_consumer_client, [consumer_client])
+    timer = threading.Timer(100, closing_consumer_client, [consumer_client])
     timer.start()
     try:
         with consumer_client:
@@ -78,7 +89,7 @@ if __name__ == '__main__':
                 on_partition_initialize=on_partition_initialize,
                 # on_partition_close=on_partition_close,
                 on_error=on_error,
-                #starting_position="-1",  # "-1" is from the beginning of the partition.
+                starting_position=-1,  # "-1" is from the beginning of the partition.
             )
     except KeyboardInterrupt:
         print('Stopped receiving.')

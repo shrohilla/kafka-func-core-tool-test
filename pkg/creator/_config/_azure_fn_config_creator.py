@@ -25,7 +25,8 @@ class FunctionAppConfigCreator(Creator):
             settings.append('AzureWebJobs.{}.Disabled'.format(Constant.KAFKA_OUTPUT)+'=true')
         if disable_flag is None and KafkaPlatform.EVENT_HUB == kafka_platform:
             settings.append(Constant.BROKER_LIST + '=' + Constant.EVENTHUB_BROKER_LIST)
-            settings.append(Constant.KAFKA_PASSWORD + '=' + Constant.EVENTHUB_CONNECTION_STRING)
+            settings.append(Constant.KAFKA_PASSWORD + '=' + Constant.EVENTHUB_CONNECTION_STRING_TRIGGER)
+            settings.append(Constant.KAFKA_PASSWORD_OUTPUT + '=' + Constant.EVENTHUB_CONNECTION_STRING_OUTPUT)
 
         return self._execute_publishing_settings(app_name, settings)
 

@@ -10,6 +10,10 @@ class FunctionAppPlanCreationException(Exception):
     pass
 
 
+class NoMessageFoundException(Exception):
+    pass
+
+
 class FunctionAppAzureCreationException(Exception):
     pass
 
@@ -20,6 +24,7 @@ class ValidationFailedException(Exception):
 
 class EventHubDataNotProcessedException(Exception):
     pass
+
 
 class TestFailedException(Exception):
     pass

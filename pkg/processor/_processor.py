@@ -25,7 +25,7 @@ class Processor:
             pass
 
         @abstractmethod
-        def execute_process(self):
+        def execute_process(self, *args):
             pass
 
         def cleanup(self):

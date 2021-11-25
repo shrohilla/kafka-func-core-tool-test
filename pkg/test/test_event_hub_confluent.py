@@ -4,19 +4,21 @@ import time
 import certifi
 from confluent_kafka import Producer, Consumer
 
+from pkg.constant import Constant
+
 if __name__ == '__main__':
 
     # Read arguments and configurations and initialize
 
-    topic = "v4_test"
+    topic = Constant.EVENTHUB_OUTPUT_NAME
     # Create Producer instance
     #producer_conf = ccloud_lib.pop_schema_registry_params_from_config(conf)
     producer_conf = {}
-    producer_conf['bootstrap.servers'] = 'pkc-epwny.eastus.azure.confluent.cloud:9092'
+    producer_conf['bootstrap.servers'] = Constant.EVENTHUB_BROKER_LIST
     producer_conf['security.protocol'] = 'SASL_SSL'
     producer_conf['sasl.mechanisms'] = 'PLAIN'
-    producer_conf['sasl.username'] = 'WHYYKOT6JMPYGJJV'
-    producer_conf['sasl.password'] = 'KUtytGe72JzhCKeA7cZ6dJj6oRE4I5NyOjMxj157tQaiJoVy67UD0sAqJM9e4QAZ'
+    producer_conf['sasl.username'] = '$ConnectionString'
+    producer_conf['sasl.password'] = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
     producer_conf.pop('schema.registry.url', None)
     producer_conf.pop('basic.auth.user.info', None)
     producer_conf.pop('basic.auth.credentials.source', None)
@@ -45,24 +47,24 @@ if __name__ == '__main__':
                   .format(msg.topic(), msg.partition(), msg.offset()))
 
     i = 11
-    #for n in range(10):
+    # #for n in range(10):
     while i < 20:
-        record_key = "alice"
-        #record_value = json.dumps({'count': n})
-        record_value = json.dumps({'count': i})
-        print("Producing record: {}\t{}".format(record_key, record_value))
-        producer.produce(topic, key=record_key, value=record_value, on_delivery=acked)
-        #producer.poll() #serves delivery reports (on_delivery)
-        # from previous produce() calls.
-        producer.poll(0)
-        i += 1
-
+         record_key = "alice"
+         #record_value = json.dumps({'count': n})
+         record_value = json.dumps({'count': i})
+         print("Producing record: {}\t{}".format(record_key, record_value))
+         producer.produce(topic, key=record_key, value=record_value, on_delivery=acked)
+         #producer.poll() #serves delivery reports (on_delivery)
+         # from previous produce() calls.
+         producer.poll(0)
+         i += 1
+    #
     producer.flush()
-
-    print("{} messages were produced to topic {}!".format(delivered_records, topic))
+    #
+    #print("{} messages were produced to topic {}!".format(delivered_records, topic))
 
     time.sleep(1)
-    producer_conf['group.id'] = '$Default'
+    producer_conf['group.id'] = "azfunc"
     producer_conf['auto.offset.reset'] = 'latest'
     consumer = Consumer(producer_conf)
     consumer.subscribe([topic])
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     try:
         while True:
             msg = consumer.poll(1)
-            if counter >= 9:
+            if counter >= 30:
                 consumer.close()
             if msg is None:
                 # No message available within timeout.
@@ -87,12 +89,15 @@ if __name__ == '__main__':
                 record_key = msg.key()
                 record_value = msg.value()
                 data = json.loads(record_value)
-                count = data['count']
-                total_count += count
-                print("Consumed record with key {} and value {}, \
-                          and updated total count to {}"
-                      .format(record_key, record_value, total_count))
+                print(data)
                 counter += 1
+                continue
+                # count = data['count']
+                # total_count += count
+                # print("Consumed record with key {} and value {}, \
+                #           and updated total count to {}"
+                #       .format(record_key, record_value, total_count))
+
     except KeyboardInterrupt:
         pass
     finally:

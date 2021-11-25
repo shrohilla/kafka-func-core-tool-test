@@ -13,10 +13,10 @@ from pkg.creator.type._creator_type import CreatorType
 from pkg.enums.Platform._platform import OSPlatform
 from pkg.enums.language._language import Language
 from pkg.factory.creator._creator import CreatorFactory
-from pkg.processor.Eventhub._eventhub_processor import EventHubTestProcessor
 from pkg.processor._processor import Processor
 import os
 
+from pkg.processor.kafka._kafka_processor import KafkaTestProcessor
 from pkg.publisher._publisher import Publisher
 from pkg.publisher.function._az_function_app_publisher import FunctionAppPublisher
 from pkg.updater._function_json import FunctionJsonUpdater
@@ -32,7 +32,7 @@ class FunctionProcessor(Processor):
         self._factory: CreatorFactory = _creator.get_instance()
         self._config_updater: FunctionJsonUpdater = FunctionJsonUpdater()
         self._function_app_publisher: Publisher = FunctionAppPublisher()
-        self._event_hub_test_processor: Processor = EventHubTestProcessor()
+        #self._event_hub_test_processor: Processor = EventHubTestProcessor()
         self._function_app_setting_creator: Creator = FunctionAppConfigCreator()
 
     def validate(self):
@@ -82,10 +82,14 @@ class FunctionProcessor(Processor):
     def _update_json_function(self, kafka_platform):
         self._config_updater.update_function_json(kafka_platform)
 
-    def _process_test(self, kafka_platform, os_platform, lang):
-        if KafkaPlatform.EVENT_HUB == kafka_platform:
-            self._event_hub_test_processor.execute_process()
-            logging.info("event hub test processed successfully for {} on {}".format(lang, os_platform))
+    def _process_test(self, kafka_platform: KafkaPlatform, os_platform, lang):
+        kafka_test_processor: Processor = KafkaTestProcessor(os_platform, kafka_platform)
+        if kafka_test_processor.execute_process():
+            logging.info('{} test processed successfully for {} on {}'.format(kafka_platform.name.lower(),
+                                                                              lang, os_platform))
+        #if KafkaPlatform.EVENT_HUB == kafka_platform:
+        #    self._event_hub_test_processor.execute_process()
+        #    logging.info("event hub test processed successfully for {} on {}".format(lang, os_platform))
 
     def _function_disable(self, _os_platform, lang):
         logging.info('updating the disable variable')

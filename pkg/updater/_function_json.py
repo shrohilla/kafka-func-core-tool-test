@@ -32,14 +32,15 @@ class FunctionJsonUpdater:
 
     def _build_config(self, local_config, function_config, output_fn_config, kafka_platform):
         if KafkaPlatform.EVENT_HUB == kafka_platform:
-            function_config['bindings'][0]['topic'] = Constant.EVENTHUB_NAME
-            output_fn_config['bindings'][1]['topic'] = Constant.EVENTHUB_NAME
+            function_config['bindings'][0]['topic'] = Constant.EVENTHUB_TRIGGER_NAME
+            output_fn_config['bindings'][1]['topic'] = Constant.EVENTHUB_OUTPUT_NAME
+            output_fn_config['bindings'][1]['password'] = Constant.KAFKA_PASSWORD_OUTPUT
             output_fn_config['bindings'][0]['authLevel'] = 'anonymous'
             local_config['Values'][Constant.BROKER_LIST] = Constant.EVENTHUB_BROKER_LIST
-            local_config['Values'][Constant.KAFKA_PASSWORD] = Constant.EVENTHUB_CONNECTION_STRING
+            local_config['Values'][Constant.KAFKA_PASSWORD] = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
+            local_config['Values'][Constant.KAFKA_PASSWORD_OUTPUT] = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
 
         self._dump_config(function_config, output_fn_config, local_config)
-        pass
 
     def _dump_config(self, function_config, output_fn_config, local_config):
         logging.info("in _dump_config")

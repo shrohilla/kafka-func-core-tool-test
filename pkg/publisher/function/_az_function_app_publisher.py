@@ -21,10 +21,8 @@ class FunctionAppPublisher(Publisher):
         func_app_publish_cmd = func_app_publish_cmd.format(_name_creator.create_function_app(lang, platform))
         logging.info("func publish command -- {}".format(func_app_publish_cmd))
         shell_cmd: Command = ShellCommand(func_app_publish_cmd)
-        time.sleep(12)
         shell_cmd.execute_command()
         logging.info("function app published successfully")
-        pass
 
     def _prepare_build(self, lang, platform):
         cmd = 'npm install'

@@ -1,7 +1,6 @@
 import logging
 import threading
 import time
-from typing import List
 
 from azure.eventhub import EventHubProducerClient, EventData, EventHubConsumerClient
 from requests import Response
@@ -17,6 +16,7 @@ from pkg.processor._processor import Processor
 
 
 class EventHubTestProcessor(Processor):
+    _output_msg = 'har har mahadev'
 
     def validate(self):
         return True
@@ -26,40 +26,22 @@ class EventHubTestProcessor(Processor):
 
     def execute_process(self):
         time.sleep(30)
-        self._request_on_output_trigger()
-        #self._create_producer_send_message()
+        self._validate_output_trigger()
         time.sleep(5)
-        self._check_if_all_message_processed()
+        self._validate_trigger()
         logging.info("EVENT HUB Trigger message processed successfully")
 
-    def _check_if_all_message_processed(self):
-        self._consumer_client = EventHubConsumerClient.from_connection_string(
-            conn_str=Constant.EVENTHUB_CONNECTION_STRING,
-            consumer_group='$Default',
-            eventhub_name=Constant.EVENTHUB_NAME,
+    def _create_event_hub_consumer(self, conn_str, eventhub_name):
+        consumer_client = EventHubConsumerClient.from_connection_string(
+            conn_str=conn_str, consumer_group='$Default', eventhub_name=eventhub_name,
         )
-        timer = threading.Timer(20, self._closing_consumer_client)
-        timer.start()
-        self._consumer_client.receive(
-            on_event=self._on_event,
-            #on_partition_initialize=on_partition_initialize,
-            # on_partition_close=on_partition_close,
-            #on_error=on_error,
-            #starting_position="-1",  # "-1" is from the beginning of the partition.
-        )
+        return consumer_client
 
-        # partition_ids: List = consumer_client.get_partition_ids()
-        # for partition_id in partition_ids:
-        #     partition_details = consumer_client.get_partition_properties(partition_id)
-        #     if partition_details['beginning_sequence_number'] != partition_details['last_enqueued_sequence_number']:
-        #         consumer_client.close()
-        #         raise EventHubDataNotProcessedException("test case failed")
-        self._consumer_client.close()
 
     def _create_producer_send_message(self):
         producer = EventHubProducerClient.from_connection_string(
-            conn_str=Constant.EVENTHUB_CONNECTION_STRING,
-            eventhub_name=Constant.EVENTHUB_NAME
+            conn_str=Constant.EVENTHUB_CONNECTION_STRING_TRIGGER,
+            eventhub_name=Constant.EVENTHUB_TRIGGER_NAME
         )
         event_data_batch = producer.create_batch()
         event_data_batch.add(EventData('Har Har Mahadev'))
@@ -70,7 +52,7 @@ class EventHubTestProcessor(Processor):
         pass
 
     def _request_on_output_trigger(self):
-        params = {'message': 'har har mahadev'}
+        params = {'message': self._output_msg}
         func_url = _global_data.get('url')+'/api/Kafkaoutput'
         if not func_url.startswith('https://'):
             func_url = 'https://'+func_url
@@ -82,12 +64,54 @@ class EventHubTestProcessor(Processor):
             raise TestFailedException('Eventhub output binding test failed, status_code :: {} and reason :: {}'
                                       .format(str(res.status_code), res.reason))
 
+    def _on_event_output(self, partition_context, event):
+        print("Received event from partition: {}.".format(partition_context.partition_id))
+        self._event_hub_output_consumer.close()
+
+    def _closing_consumer_client(self, event_consumer):
+        print("closing client")
+        event_consumer.close()
+        print("client closed")
+
+    def _validate_output_trigger(self):
+        self._request_on_output_trigger()
+        if not self._validate_msg_output_trigger():
+            raise ValidationFailedException('Eventhub trigger failed')
+        pass
+
+    def _validate_msg_output_trigger(self):
+        event_hub_consumer = self._create_event_hub_consumer(Constant.EVENTHUB_CONNECTION_STRING_OUTPUT,
+                                        Constant.EVENTHUB_OUTPUT_NAME)
+        event_hub_consumer.receive(
+            on_event=self._on_event_output,
+            # on_partition_initialize=on_partition_initialize,
+            # on_partition_close=on_partition_close,
+            # on_error=on_error,
+            # starting_position="-1",  # "-1" is from the beginning of the partition.
+        )
+        self._event_hub_output_consumer = event_hub_consumer
+        timer = threading.Timer(10, self._closing_consumer_client, [event_hub_consumer])
+        timer.start()
+
+        return True
+
+    def _validate_trigger(self):
+        self._create_producer_send_message()
+        event_hub_consumer = self._create_event_hub_consumer(Constant.EVENTHUB_CONNECTION_STRING_TRIGGER,
+                                        Constant.EVENTHUB_TRIGGER_NAME)
+        event_hub_consumer.receive(
+            on_event=self._on_event,
+            # on_partition_initialize=on_partition_initialize,
+            # on_partition_close=on_partition_close,
+            # on_error=on_error,
+            # starting_position="-1",  # "-1" is from the beginning of the partition.
+        )
+        self._event_hub_output_consumer = event_hub_consumer
+        timer = threading.Timer(10, self._closing_consumer_client, [event_hub_consumer])
+        timer.start()
+        return True
+
     def _on_event(self, partition_context, event):
         print("Received event from partition: {}.".format(partition_context.partition_id))
-        self._consumer_client.close()
+        self._event_hub_output_consumer.close()
         raise EventHubDataNotProcessedException("test case failed")
-
-    def _closing_consumer_client(self):
-        print("closing client")
-        self._consumer_client.close()
-        print("client closed")
