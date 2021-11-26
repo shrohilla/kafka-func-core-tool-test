@@ -3,6 +3,7 @@ import os.path
 
 from pkg.command._command import Command
 from pkg.command.shell_cmd import ShellCommand
+from pkg.constant import Constant
 from pkg.creator._creator import Creator
 from pkg.enums.Platform._platform import OSPlatform
 from pkg.enums.language._language import Language
@@ -37,18 +38,28 @@ class LocalFunctionAppCreator(Creator):
 
     def _build_io_triggers(self):
         lang_name = self._lang.name.lower()
-        logging.info("building the trigger for language :: "+lang_name)
-        app_trigger_cmd = self._func_app_trigger
-        #TODO
-        if Language.POWERSHELL == self._lang:
-            app_trigger_cmd = app_trigger_cmd+" --language "+lang_name
-        shell_cmd: Command = ShellCommand(app_trigger_cmd)
-        shell_cmd.execute_command()
-        logging.info("trigger built successfully")
+        self._build_trigger(lang_name)
+        self._build_output_binding(lang_name)
+
+    def _build_output_binding(self, lang_name):
         app_trigger_cmd = self._func_app_out_binding
-        #TODO
+        if os.path.isdir(Constant.KAFKA_OUTPUT):
+            return
+        # TODO
         if Language.POWERSHELL == self._lang:
-            app_trigger_cmd = app_trigger_cmd+" --language "+lang_name
+            app_trigger_cmd = app_trigger_cmd + " --language " + lang_name
         shell_cmd: Command = ShellCommand(app_trigger_cmd)
         shell_cmd.execute_command()
         logging.info("output binding built successfully")
+
+    def _build_trigger(self, lang_name):
+        logging.info("building the trigger for language :: " + lang_name)
+        app_trigger_cmd = self._func_app_trigger
+        if os.path.isdir(Constant.KAFKA_TRIGGER):
+            return
+        # TODO
+        if Language.POWERSHELL == self._lang:
+            app_trigger_cmd = app_trigger_cmd + " --language " + lang_name
+        shell_cmd: Command = ShellCommand(app_trigger_cmd)
+        shell_cmd.execute_command()
+        logging.info("trigger built successfully")

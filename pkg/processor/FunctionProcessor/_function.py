@@ -32,7 +32,6 @@ class FunctionProcessor(Processor):
         self._factory: CreatorFactory = _creator.get_instance()
         self._config_updater: FunctionJsonUpdater = FunctionJsonUpdater()
         self._function_app_publisher: Publisher = FunctionAppPublisher()
-        #self._event_hub_test_processor: Processor = EventHubTestProcessor()
         self._function_app_setting_creator: Creator = FunctionAppConfigCreator()
 
     def validate(self):
@@ -48,9 +47,6 @@ class FunctionProcessor(Processor):
             #TODO
             if Language.PYTHON == lang and OSPlatform.WINDOW == self._os_platform:
                 continue
-            #TODO -- remove this only for typescript testing
-            #if Language.TYPESCRIPT != lang:
-            #    continue
             self._create_azure_resources(self._os_platform, lang)
             for kafka_platform in KafkaPlatform:
                 folder_path = self._build_function_folder(lang)
@@ -60,7 +56,7 @@ class FunctionProcessor(Processor):
                 self._create_setting_functions_app(lang, self._os_platform, kafka_platform)
                 self._function_app_publisher.publish(lang, self._os_platform)
                 self._process_test(kafka_platform, self._os_platform, lang)
-                self._function_disable(self._os_platform, lang)
+            self._function_disable(self._os_platform, lang)
 
     def _build_function_folder(self, lang):
         logging.info("path :: " + self._path)

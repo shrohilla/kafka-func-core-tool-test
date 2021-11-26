@@ -34,7 +34,7 @@ class KafkaTestProcessor(Processor):
         pass
 
     def execute_process(self):
-        time.sleep(40)
+        time.sleep(30)
         kafka_config = self._create_config()
         self._validate_output_trigger(kafka_config)
         time.sleep(5)
@@ -69,18 +69,19 @@ class KafkaTestProcessor(Processor):
         #self._request_on_output_trigger()
         topic = Constant.EVENTHUB_OUTPUT_NAME
         passwd = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
-        if KafkaPlatform.EVENT_HUB == self._kafka_platform:
+        conn_str = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
+        if KafkaPlatform.CONFLUENT == self._kafka_platform:
             passwd = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
-            topic = Constant.EVENTHUB_OUTPUT_NAME
-        if not self._validate_msg_output_trigger(kafka_config, topic, Constant.EVENTHUB_CONNECTION_STRING_OUTPUT):
+            topic = Constant.CONFLUENT_OUTPUT_NAME
+            conn_str = Constant.CONFLUENT_CONNECTION_STRING
+        if not self._validate_msg_output_trigger(kafka_config, topic, conn_str):
             raise ValidationFailedException('{} trigger failed'.format(self._kafka_platform.name.lower()))
 
 
     def _validate_msg_output_trigger(self, kafka_config, topic, passwd):
         kafka_config['group.id'] = "azfunc"
         kafka_config['auto.offset.reset'] = 'latest'
-        if KafkaPlatform.EVENT_HUB == self._kafka_platform:
-            kafka_config['sasl.password'] = passwd
+        kafka_config['sasl.password'] = passwd
         consumer = Consumer(kafka_config)
         consumer.subscribe([topic])
         return self._validate_msg_consumed(consumer)
@@ -94,13 +95,13 @@ class KafkaTestProcessor(Processor):
 
     def _validate_trigger(self):
         self._write_on_trigger()
-        time.sleep(15)
+        time.sleep(5)
         kafka_config = self._create_config()
         topic = Constant.EVENTHUB_TRIGGER_NAME
         passwd = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
-        if KafkaPlatform.EVENT_HUB == self._kafka_platform:
-            topic = Constant.EVENTHUB_TRIGGER_NAME
-            passwd = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
+        if KafkaPlatform.CONFLUENT == self._kafka_platform:
+            topic = Constant.CONFLUENT_TRIGGER_NAME
+            passwd = Constant.CONFLUENT_CONNECTION_STRING
         try:
             self._validate_msg_output_trigger(kafka_config, topic, passwd)
         except Exception as e:
@@ -109,20 +110,27 @@ class KafkaTestProcessor(Processor):
 
     def _write_on_trigger(self):
         kafka_config = self._create_config()
-        if KafkaPlatform.EVENT_HUB == self._kafka_platform:
-            kafka_config['sasl.password'] = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
+        topic = Constant.EVENTHUB_TRIGGER_NAME
+        kafka_config['sasl.password'] = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
+        if KafkaPlatform.CONFLUENT == self._kafka_platform:
+            kafka_config['sasl.password'] = Constant.CONFLUENT_CONNECTION_STRING
+            topic = Constant.CONFLUENT_TRIGGER_NAME
         producer = Producer(kafka_config)
-        producer.produce(Constant.EVENTHUB_TRIGGER_NAME, self._output_msg, callback=self._producer_ack)
+        producer.produce(topic, self._output_msg, callback=self._producer_ack)
         producer.poll(10)
         producer.flush()
 
     def _create_config(self):
         kafka_conf = {}
         kafka_conf['bootstrap.servers'] = Constant.EVENTHUB_BROKER_LIST
+        if KafkaPlatform.CONFLUENT == self._kafka_platform:
+            kafka_conf['bootstrap.servers'] = Constant.CONFLUENT_BROKER_LIST
         kafka_conf['security.protocol'] = 'SASL_SSL'
         kafka_conf['sasl.mechanisms'] = 'PLAIN'
         if KafkaPlatform.EVENT_HUB == self._kafka_platform:
             kafka_conf['sasl.username'] = '$ConnectionString'
+        elif KafkaPlatform.CONFLUENT == self._kafka_platform:
+            kafka_conf['sasl.username'] = Constant.CONFLUENT_USER_NAME
         kafka_conf.pop('schema.registry.url', None)
         kafka_conf.pop('basic.auth.user.info', None)
         kafka_conf.pop('basic.auth.credentials.source', None)
@@ -130,7 +138,7 @@ class KafkaTestProcessor(Processor):
         return kafka_conf
 
     def _validate_msg_consumed(self, consumer):
-        timeout = time.time() + 200
+        timeout = time.time() + 180
         try:
             while True:
                 if time.time() > timeout:

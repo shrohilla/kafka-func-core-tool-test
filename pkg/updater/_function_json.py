@@ -32,15 +32,31 @@ class FunctionJsonUpdater:
 
     def _build_config(self, local_config, function_config, output_fn_config, kafka_platform):
         if KafkaPlatform.EVENT_HUB == kafka_platform:
-            function_config['bindings'][0]['topic'] = Constant.EVENTHUB_TRIGGER_NAME
-            output_fn_config['bindings'][1]['topic'] = Constant.EVENTHUB_OUTPUT_NAME
-            output_fn_config['bindings'][1]['password'] = Constant.KAFKA_PASSWORD_OUTPUT
-            output_fn_config['bindings'][0]['authLevel'] = 'anonymous'
-            local_config['Values'][Constant.BROKER_LIST] = Constant.EVENTHUB_BROKER_LIST
-            local_config['Values'][Constant.KAFKA_PASSWORD] = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
-            local_config['Values'][Constant.KAFKA_PASSWORD_OUTPUT] = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
+            self._build_event_hub_kafka_config(function_config, local_config, output_fn_config)
+        elif KafkaPlatform.CONFLUENT == kafka_platform:
+            self._build_confluent_kafka_config(function_config, local_config, output_fn_config)
 
         self._dump_config(function_config, output_fn_config, local_config)
+
+    def _build_confluent_kafka_config(self, function_config, local_config, output_fn_config):
+        function_config['bindings'][0]['topic'] = Constant.CONFLUENT_TRIGGER_NAME
+        function_config['bindings'][0]['username'] = Constant.CONFLUENT_USER_NAME
+        output_fn_config['bindings'][1]['topic'] = Constant.CONFLUENT_OUTPUT_NAME
+        output_fn_config['bindings'][1]['username'] = Constant.CONFLUENT_USER_NAME
+        output_fn_config['bindings'][1]['password'] = Constant.KAFKA_PASSWORD
+        output_fn_config['bindings'][0]['authLevel'] = 'anonymous'
+        local_config['Values'][Constant.BROKER_LIST] = Constant.CONFLUENT_BROKER_LIST
+        local_config['Values'][Constant.KAFKA_PASSWORD] = Constant.CONFLUENT_CONNECTION_STRING
+        local_config['Values'][Constant.KAFKA_PASSWORD_OUTPUT] = Constant.CONFLUENT_CONNECTION_STRING
+
+    def _build_event_hub_kafka_config(self, function_config, local_config, output_fn_config):
+        function_config['bindings'][0]['topic'] = Constant.EVENTHUB_TRIGGER_NAME
+        output_fn_config['bindings'][1]['topic'] = Constant.EVENTHUB_OUTPUT_NAME
+        output_fn_config['bindings'][1]['password'] = Constant.KAFKA_PASSWORD_OUTPUT
+        output_fn_config['bindings'][0]['authLevel'] = 'anonymous'
+        local_config['Values'][Constant.BROKER_LIST] = Constant.EVENTHUB_BROKER_LIST
+        local_config['Values'][Constant.KAFKA_PASSWORD] = Constant.EVENTHUB_CONNECTION_STRING_TRIGGER
+        local_config['Values'][Constant.KAFKA_PASSWORD_OUTPUT] = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
 
     def _dump_config(self, function_config, output_fn_config, local_config):
         logging.info("in _dump_config")

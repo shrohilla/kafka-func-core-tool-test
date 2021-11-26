@@ -1,3 +1,5 @@
+from pycparser.c_ast import Constant
+
 from pkg.command.azcli_cmd import AzCliCommand
 from pkg.constant import Constant
 from pkg.creator._creator import Creator
@@ -27,6 +29,10 @@ class FunctionAppConfigCreator(Creator):
             settings.append(Constant.BROKER_LIST + '=' + Constant.EVENTHUB_BROKER_LIST)
             settings.append(Constant.KAFKA_PASSWORD + '=' + Constant.EVENTHUB_CONNECTION_STRING_TRIGGER)
             settings.append(Constant.KAFKA_PASSWORD_OUTPUT + '=' + Constant.EVENTHUB_CONNECTION_STRING_OUTPUT)
+        elif disable_flag is None and KafkaPlatform.CONFLUENT == kafka_platform:
+            settings.append(Constant.BROKER_LIST + '='+ Constant.CONFLUENT_BROKER_LIST)
+            settings.append(Constant.KAFKA_PASSWORD+'='+Constant.CONFLUENT_CONNECTION_STRING)
+            settings.append(Constant.KAFKA_PASSWORD_OUTPUT + '=' + Constant.CONFLUENT_CONNECTION_STRING)
 
         return self._execute_publishing_settings(app_name, settings)
 
