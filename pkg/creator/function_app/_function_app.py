@@ -4,7 +4,6 @@ from pkg._exception import FunctionAppAzureCreationException
 from pkg.constant import Constant
 from pkg.creator._creator import Creator
 from pkg.entity._az_cli import AzCli
-from pkg.executor.azcli._az_cli_executor import AzCliExecutor
 from pkg.enums.language._language import Language
 from pkg.executor.azcli.command._azcli_cmd_executor import AzCliCommandExecutor
 from pkg.utils import _name_creator

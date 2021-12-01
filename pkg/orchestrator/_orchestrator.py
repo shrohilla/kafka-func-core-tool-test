@@ -3,7 +3,7 @@ from pkg.enums.Platform._platform import OSPlatform
 from pkg.factory.creator import _creator
 from pkg.factory.creator._creator import CreatorFactory
 from pkg.enums.language._language import Language
-from pkg.processor.FunctionProcessor._function import FunctionProcessor
+from pkg.processor.FunctionProcessor._function import FunctionPlatformProcessor
 from pkg.processor._processor import Processor
 
 
@@ -16,5 +16,5 @@ class TestOrchestrator:
         creatorFac.build_factory(path)
 
         for os_platform in OSPlatform:
-            lang_processor: Processor = FunctionProcessor(path, os_platform)
+            lang_processor: Processor = FunctionPlatformProcessor(path, os_platform)
             lang_processor.process()

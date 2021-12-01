@@ -1,8 +1,8 @@
 import json
 import logging
 import threading
-import time
 from builtins import Exception
+import time
 
 import certifi
 from confluent_kafka import Consumer, Producer, Message
@@ -53,10 +53,18 @@ class KafkaTestProcessor(Processor):
         http_req = HttpRequest(url=func_url, method='get', body={}, params=params)
         http_cmd: HttpCommand = HttpCommand(http_req)
         http_cmd_executor: Executor = HttpCommandExecutor(http_cmd)
-        res: Response = http_cmd_executor.execute()
-        if res is None or res.status_code != 200:
-            raise TestFailedException('Eventhub output binding test failed, status_code :: {} and reason :: {}'
+        count = 0
+        while count < 3:
+            res: Response = http_cmd_executor.execute()
+            if res is not None and res.status_code == 200:
+                break
+            if res is not None and 500 < res.status_code < 510:
+                time.sleep(3)
+                continue
+            if res is None or res.status_code != 200:
+                raise TestFailedException('Eventhub output binding test failed, status_code :: {} and reason :: {}'
                                       .format(str(res.status_code), res.reason))
+            count += 1
         logging.info('request sent to http endpoint')
 
     def _on_event_output(self, partition_context, event):
@@ -64,14 +72,11 @@ class KafkaTestProcessor(Processor):
         self._event_hub_output_consumer.close()
 
     def _validate_output_trigger(self, kafka_config):
-        timer = threading.Timer(30, self._request_on_output_trigger)
+        timer = threading.Timer(40, self._request_on_output_trigger)
         timer.start()
-        #self._request_on_output_trigger()
         topic = Constant.EVENTHUB_OUTPUT_NAME
-        passwd = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
         conn_str = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
         if KafkaPlatform.CONFLUENT == self._kafka_platform:
-            passwd = Constant.EVENTHUB_CONNECTION_STRING_OUTPUT
             topic = Constant.CONFLUENT_OUTPUT_NAME
             conn_str = Constant.CONFLUENT_CONNECTION_STRING
         if not self._validate_msg_output_trigger(kafka_config, topic, conn_str):
@@ -138,7 +143,7 @@ class KafkaTestProcessor(Processor):
         return kafka_conf
 
     def _validate_msg_consumed(self, consumer):
-        timeout = time.time() + 180
+        timeout = time.time() + 200
         try:
             while True:
                 if time.time() > timeout:
