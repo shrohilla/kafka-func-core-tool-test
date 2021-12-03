@@ -1,4 +1,5 @@
 import json
+import os
 import time
 
 import certifi
@@ -15,8 +16,8 @@ if __name__ == '__main__':
     producer_conf['bootstrap.servers'] = 'pkc-epwny.eastus.azure.confluent.cloud:9092'
     producer_conf['security.protocol'] = 'SASL_SSL'
     producer_conf['sasl.mechanisms'] = 'PLAIN'
-    producer_conf['sasl.username'] = 'WHYYKOT6JMPYGJJV'
-    producer_conf['sasl.password'] = 'KUtytGe72JzhCKeA7cZ6dJj6oRE4I5NyOjMxj157tQaiJoVy67UD0sAqJM9e4QAZ'
+    producer_conf['sasl.username'] = os.environ['confluent_user_name']
+    producer_conf['sasl.password'] = os.environ['confluent_secret']
     producer_conf.pop('schema.registry.url', None)
     producer_conf.pop('basic.auth.user.info', None)
     producer_conf.pop('basic.auth.credentials.source', None)
