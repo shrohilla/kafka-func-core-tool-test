@@ -53,7 +53,8 @@ if __name__ == '__main__':
          #record_value = json.dumps({'count': n})
          record_value = json.dumps({'count': i})
          print("Producing record: {}\t{}".format(record_key, record_value))
-         producer.produce(topic, key=record_key, value=record_value, on_delivery=acked)
+         header = [('test', '1')]
+         producer.produce(topic, key=record_key, value=record_value, headers=header, on_delivery=acked)
          #producer.poll() #serves delivery reports (on_delivery)
          # from previous produce() calls.
          producer.poll(0)
